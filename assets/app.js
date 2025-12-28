@@ -3,6 +3,7 @@ const API_BASE = './predictions';
 async function loadTicker(ticker) {
   try {
     const response = await fetch(`${API_BASE}/${ticker}.json`);
+    if (!response.ok) throw new Error(`No  ${response.status}`);
     const data = await response.json();
     
     document.getElementById('rawjson').textContent = JSON.stringify(data, null, 2);
@@ -15,10 +16,10 @@ async function loadTicker(ticker) {
       <p><strong>Prediction:</strong> ₹${data.predicted_price} 
          <span class="signal ${data.signal.toLowerCase()}">${signal}</span></p>
       <p><strong>Last Close:</strong> ₹${data.last_close} | 
-         <strong>RMSE:</strong> ₹${data.rmse}</p>
+         <strong>RMSE:</strong> ₹${data.rmse || 'N/A'}</p>
     `;
     
-    // Update chart
+    // Chart
     const ctx = document.getElementById('priceChart').getContext('2d');
     if (window.priceChart) window.priceChart.destroy();
     
@@ -43,6 +44,7 @@ async function loadTicker(ticker) {
     
   } catch (e) {
     document.getElementById('rawjson').textContent = `Error: ${e.message}`;
+    document.getElementById('summary').innerHTML = `<p>Error loading ${ticker}</p>`;
   }
 }
 
@@ -50,27 +52,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const select = document.getElementById('ticker-select');
   const loadBtn = document.getElementById('load-btn');
   const refreshBtn = document.getElementById('refresh-btn');
-  const autoRefresh = document.getElementById('autorefresh');
   
-  // Default tickers
-  ['RELIANCE.NS', 'INFY.NS'].forEach(ticker => {
+  // HARDCODE tickers
+  const tickers = ['RELIANCE.NS'];
+  tickers.forEach(ticker => {
     const option = document.createElement('option');
     option.value = ticker;
     option.textContent = ticker;
     select.appendChild(option);
   });
-  select.value = 'RELIANCE.NS';
   
   loadBtn.onclick = () => loadTicker(select.value);
   refreshBtn.onclick = () => loadTicker(select.value);
   
-  // Auto load on start
+  // AUTO LOAD RELIANCE
   loadTicker('RELIANCE.NS');
-  
-  autoRefresh.onchange = () => {
-    if (autoRefresh.checked) {
-      loadTicker(select.value);
-      setInterval(() => loadTicker(select.value), 120000);
-    }
-  };
 });
